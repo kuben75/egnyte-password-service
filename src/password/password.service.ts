@@ -72,7 +72,9 @@ export class PasswordService {
       isStrongEnough: isStrongEnough,
       feedback: {
         warning: analysis.feedback.warning || defaultWarning,
-        suggestions: analysis.feedback.suggestions || defaultSuggestions
+        suggestions: analysis.feedback.suggestions && analysis.feedback.suggestions.length > 0
+        ? analysis.feedback.suggestions
+        : defaultSuggestions
       }
     }
 
