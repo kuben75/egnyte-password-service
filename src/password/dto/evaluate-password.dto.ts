@@ -3,7 +3,7 @@ import {
   IsEmail,
   IsNotEmpty,
   IsOptional,
-  IsString,
+  IsString, Matches, MaxLength,
   MinLength,
 } from 'class-validator';
 
@@ -43,5 +43,7 @@ export class EvaluatePasswordDto {
   @IsNotEmpty({ message: 'Password cannot be empty.'})
   @IsString()
   @MinLength(12, { message: 'Password must be at least 12 character long.'})
+  @MaxLength(128, { message: 'Password must be at most 128 character long.'})
+  @Matches(/.*\S.*/, { message: 'Password cannot consist of only whitespaces.' })
   password: string;
 }
