@@ -1,98 +1,74 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Password Strength Microservice
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A secure, and production-ready microservice built with NestJS for evaluating password entropy and detecting known data breaches. Designed with enterprise-grade security standards, specifically catering to clients in regulated industries (HIPAA, FedRAMP).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+<div align="center">
+  <img src="https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
+  <img src="https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/-jest-%23C21325?style=for-the-badge&logo=jest&logoColor=white" alt="Jest" />
+  <img src="https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white" alt="Swagger" />
+</div>
+<br/>
 
-## Description
+##  Key Decisions & Assumptions
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### 1. Framework & Architecture
+**NestJS** was chosen as the core framework. Its out-of-the-box support for TypeScript, Dependency Injection, and decorators allows for a highly structured, scalable, and testable codebase. It provides an enterprise-ready architecture that strongly resonates with established paradigms found in C# and .NET environments (which I'm using daily), ensuring rapid development and maintainability.
 
-## Project setup
+### 2. Password Entropy (zxcvbn vs. Regex)
+Instead of relying on rigid Regular Expressions (which often force users to create hard-to-remember passwords like `P@ssw0rd1!`), this service uses Dropbox's **zxcvbn** library. It calculates true entropy by checking passwords against dictionaries, common patterns, and spatial key placements, aligning with modern NIST guidelines.
 
+### 3. Data Breach Detection (k-Anonymity)
+To meet the stringent security requirements of healthcare and finance sectors, passwords must be checked against known breaches without ever exposing the user's actual password.
+*   **Decision:** Integration with the *Have I Been Pwned* (HIBP) API using the **k-Anonymity** model.
+*   **Implementation:** The service hashes the password (SHA-1) locally and sends only the first 5 characters (prefix) over the network. The actual password never leaves server.
+
+### 4. Edge Cases & Fail-Open Strategy
+*   **Predictable Input Penalization:** If a user submits their email, the system automatically splits the string and severely penalizes passwords containing prefix of the email or the username.
+*   **Fail-Open:** If the external HIBP API experiences downtime, the system catches the error and gracefully falls back to local entropy analysis, ensuring the end-user registration process is not blocked by third-party outages.
+
+##  AI Collaboration
+
+In alignment with modern development practices, Artificial Intelligence was actively utilized throughout this project's lifecycle as an accelerator and pair-programming partner:
+*   **Rapid Prototyping:** Accelerating the boilerplate setup of NestJS modules and Docker configurations.
+*   **Test Generation:** Assisting in drafting comprehensive Jest unit tests for edge cases.
+*   **Security Brainstorming:** Validating architectural concepts regarding HIPAA/FedRAMP compliance (e.g., confirming the k-Anonymity approach for HIBP integration).
+
+##  Production Readiness
+
+This microservice includes several layers of defense for a production environment:
+*   **Docker Multi-Stage Build:** Ensures the final production image is lightweight and stripped of development dependencies.
+*   **Rate Limiting:** `@nestjs/throttler` is globally applied (max 5 requests/min per IP) to prevent Brute-Force and DDoS attacks.
+*   **HTTP Security Headers:** `helmet` is active to mask the technology stack footprint and protect against XSS.
+*   **Strict Input Validation:** `ValidationPipe` with whitelist enforcement rejects mass-assignment attacks and malformed JSON payloads immediately.
+
+## How to Run
+
+### Option 1: Docker (Recommended)
+The easiest way to run the service using the production-optimized container.
 ```bash
-$ npm install
+docker-compose up -d
 ```
 
-## Compile and run the project
+The service will be available on http://localhost:3000, but I didn't create a frontend for it so currently recommended option is to use Swagger UI (http://localhost:3000/api-docs).
+
+### Option 2: Local Development
+1. Clone the repository:
+```bash
+git clone https://github.com/kuben75/egnyte-password-service.git
+
+npm install
+
+npm run start:dev
+```
+## API Documentation
+Once the application is running, the interactive OpenAPI (Swagger) documentation is available at: http://localhost:3000/api-docs
+
+You can execute evaluation requests directly from the browser UI.
+
+## Running Tests
+The business logic and controllers are covered by Unit Tests using the AAA pattern. External dependencies are mocked for reliability.
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run test
 ```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
