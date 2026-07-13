@@ -33,6 +33,7 @@ In alignment with modern development practices, Artificial Intelligence was acti
 *   **Rapid Prototyping:** Accelerating the boilerplate setup of NestJS modules and Docker configurations.
 *   **Test Generation:** Assisting in drafting comprehensive Jest unit tests for edge cases.
 *   **Security Brainstorming:** Validating architectural concepts regarding HIPAA/FedRAMP compliance (e.g., confirming the k-Anonymity approach for HIBP integration).
+*   **Code Refactoring:** Assisting in restructuring **password.service.ts** class to avoid violating the Single Responsibility Principle, thereby preventing it from becoming a "God Object" and maintaining architectural clarity.
 
 ##  Production Readiness
 
